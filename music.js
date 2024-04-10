@@ -4,7 +4,7 @@ const { stdin: input, stdout: output } = require('process');
 
 const rl = readline.createInterface({ input, output });
 
-//#region library management 
+//#region library management helpers
 // format: {title: string, artist: string, hasBeenPlayed: bool}
 const library = [];
 
@@ -19,7 +19,7 @@ const markAsPlayed = (title) => {
     }
 }
 
-const getLibrary = (limitToUnplayed = false, artistFilter = null) => {
+const getFilteredLibrary = (limitToUnplayed = false, artistFilter = null) => {
     return library.filter(song => {
         if (limitToUnplayed && song.hasBeenPlayed) {
             return false;
@@ -39,7 +39,13 @@ rl.prompt();
 rl.on("line", answer => {
     // first word of user input is a command
     const command = answer.split(" ")[0]; 
-    //TODO: HANDLE TOO MANY INPUTS
+    // Note: in general we are not handling weird inputs optimally. We aren't crashing the app and aren't
+    //  allowing data to be written to the library in a problematic way, but to make this code production-ready
+    //  we'd want to think about more intelligent parsing of something like forgotten quotation marks or extra arguments
+    //  That being said, I don't think that's a really important thing to prioritize in this tech challenge
+    //  because you can do an essentially arbitrary amount of finessing on string processing to get perfect behavior
+    //  and "doesn't do anything wrong, but could have more intuitive error messaging on weirder edge cases"
+    //  feels like a fine cutoff for the scope of this challenge
     switch (command) {
         case "add": {
             // add "$title" "$artist" splits out into ["add ", "$title", " ", "$artist",""]
@@ -106,29 +112,30 @@ const play = (title) => {
 }
 
 const show = (whatToShow, artistFilter) => {
+    const invalidFormatResponse = "Invalid input - allowed formats: 'show all', 'show unplayed', 'show all by \"$artist\", 'show unplayed by \"$artist\"";
     if (library.length === 0) {
         console.log('Library is empty!');
     }
-    // TODO: handle weird formatting better
-    if (!(whatToShow === "all" || whatToShow === "unplayed")) {
-        console.log("Invalid input - allowed formats: 'show all', 'show unplayed', 'show all by \"$artist\", 'show unplayed by \"$artist\"");
-    }
-    let songsToShow;
-    switch (whatToShow) {
-        case "all":
-            songsToShow = getLibrary(false, artistFilter);
-            songsToShow.forEach(song => {
-                console.log(`"${song.title}" by ${song.artist} (${song.hasBeenPlayed ? "played" : "unplayed"})`);
-            })
-            break;
-        case "unplayed":
-            songsToShow = getLibrary(true, artistFilter);
-            songsToShow.forEach(song => {
-                console.log(`"${song.title}" by ${song.artist}`);
-            })
-            break;
-        default:
-            console.log(invalidFormatResponse);
+    else if (!(whatToShow === "all" || whatToShow === "unplayed")) {
+        console.log(invalidFormatResponse);
+    } else {
+        let songsToShow;
+        switch (whatToShow) {
+            case "all":
+                songsToShow = getFilteredLibrary(false, artistFilter);
+                songsToShow.forEach(song => {
+                    console.log(`"${song.title}" by ${song.artist} (${song.hasBeenPlayed ? "played" : "unplayed"})`);
+                })
+                break;
+            case "unplayed":
+                songsToShow = getFilteredLibrary(true, artistFilter);
+                songsToShow.forEach(song => {
+                    console.log(`"${song.title}" by ${song.artist}`);
+                })
+                break;
+            default:
+                console.log(invalidFormatResponse);
+        }
     }
     rl.prompt();
 }
