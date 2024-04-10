@@ -4,22 +4,6 @@ const { stdin: input, stdout: output } = require('process');
 
 const rl = readline.createInterface({ input, output });
 
-//#region helpers - input parsing
-
-// per provided specs, title and artist should be surrounded by quotation marks
-// if I were making this production-ready, I'd probably make the quotation marks optional and maybe
-// discuss with stakeholders whether there are other punctuation marks or similar that we should expect
-// to have to strip out/ignore from our input stream
-const verifyFormatting = (word) => {
-    return (word.slice(0,1) === '"' && word.slice(-1) === '"');
-}
-
-const stripQuotationMarks = (word) => {
-    return word.slice(1,-1);
-}
-
-//#endregion
-
 //#region library management 
 // format: {title: string, artist: string, hasBeenPlayed: bool}
 const library = [];
@@ -53,23 +37,33 @@ console.log("Welcome to your music collection! \n");
 rl.setPrompt("> ");
 rl.prompt();
 rl.on("line", answer => {
-    const commandAndArgs = answer.split(" "); //first word is command; subsequent words are arguments
+    // first word of user input is a command
+    const command = answer.split(" ")[0]; 
     //TODO: HANDLE TOO MANY INPUTS
-    switch (commandAndArgs[0]) {
-        case "add": { //add "$title" "$artist"
-            add(commandAndArgs[1], commandAndArgs[2]);
+    switch (command) {
+        case "add": {
+            // add "$title" "$artist" splits out into ["add ", "$title", " ", "$artist",""]
+            const args = answer.split("\"");
+            add(args[1], args[3]);
             break;
         }
-        case "play": { // play "$title"
-            play(commandAndArgs[1]);
+        case "play": {
+            // play "$title" splits out into ["play ", "$title",""]
+            const args = answer.split("\"");
+            play(args[1]);
             break;
         }
         case "show": { // show all; show unplayed; show all by "$artist"; show unplayed by "$artist"
+            const commandAndArgs = answer.split(" ");
+            const whatToShow = commandAndArgs[1];
+
             let artistFilter;
             if (commandAndArgs[2] && commandAndArgs[2] === "by") {
-                artistFilter = commandAndArgs[3];
+                // show X by "$artist" splits out into ["show X by ", "$artist", ""]
+                const args = answer.split("\"");
+                artistFilter = args[1];
             }
-            show(commandAndArgs[1], artistFilter)
+            show(whatToShow, artistFilter)
             break;
         }
         case "quit": {
@@ -85,9 +79,7 @@ rl.on("line", answer => {
 });
 
 const add = (title, artist) => {
-    if (title && artist && verifyFormatting(title) && verifyFormatting(artist)) {
-        title = stripQuotationMarks(title);
-        artist = stripQuotationMarks(artist);
+    if (title && artist) {
         library.push({
             title: title, 
             artist: artist, 
@@ -100,8 +92,7 @@ const add = (title, artist) => {
 }
 
 const play = (title) => {
-    if (title && verifyFormatting(title)) {
-        title = stripQuotationMarks(title);
+    if (title) {
         if (verifyTitleInLibrary(title)) {
             console.log(`You're listening to "${title}"`);
             markAsPlayed(title);
@@ -115,13 +106,12 @@ const play = (title) => {
 }
 
 const show = (whatToShow, artistFilter) => {
-    const isUnplayedFilterValid = (whatToShow === "all" || whatToShow === "unplayed");
-    if (!isUnplayedFilterValid || (artistFilter && !verifyFormatting(artistFilter))) {
-        console.log("Invalid input - allowed formats: 'show all', 'show unplayed', 'show all by \"$artist\", 'show unplayed by \"$artist\"");
+    if (library.length === 0) {
+        console.log('Library is empty!');
     }
-    
-    if (artistFilter) {
-        artistFilter = stripQuotationMarks(artistFilter);
+    // TODO: handle weird formatting better
+    if (!(whatToShow === "all" || whatToShow === "unplayed")) {
+        console.log("Invalid input - allowed formats: 'show all', 'show unplayed', 'show all by \"$artist\", 'show unplayed by \"$artist\"");
     }
     let songsToShow;
     switch (whatToShow) {
