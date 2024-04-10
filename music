@@ -8,23 +8,23 @@ const rl = readline.createInterface({ input, output });
 // format: {title: string, artist: string, hasBeenPlayed: bool}
 const library = [];
 
-const verifyTitleInLibrary = (title) => {
-    return library.some(song => song.title === title);
+const isTitleInLibrary = (title) => {
+    return library.some(album => album.title === title);
 }
 
 const markAsPlayed = (title) => {
-    if (verifyTitleInLibrary(title)) {
-        const currentSong = library.filter(song => song.title === title)[0];
-        currentSong.hasBeenPlayed = true;
+    if (isTitleInLibrary(title)) {
+        const currentAlbum = library.filter(album => album.title === title)[0];
+        currentAlbum.hasBeenPlayed = true;
     }
 }
 
 const getFilteredLibrary = (limitToUnplayed = false, artistFilter = null) => {
-    return library.filter(song => {
-        if (limitToUnplayed && song.hasBeenPlayed) {
+    return library.filter(album => {
+        if (limitToUnplayed && album.hasBeenPlayed) {
             return false;
         }
-        if (artistFilter && song.artist !== artistFilter) {
+        if (artistFilter && album.artist !== artistFilter) {
             return false;
         }
         return true;
@@ -33,64 +33,69 @@ const getFilteredLibrary = (limitToUnplayed = false, artistFilter = null) => {
 //#endregion
 
 //#region main REPL
-console.log("Welcome to your music collection! \n");
-rl.setPrompt("> ");
-rl.prompt();
-rl.on("line", answer => {
-    // first word of user input is a command
-    const command = answer.split(" ")[0]; 
-    // Note: in general we are not handling weird inputs optimally. We aren't crashing the app and aren't
-    //  allowing data to be written to the library in a problematic way, but to make this code production-ready
-    //  we'd want to think about more intelligent parsing of something like forgotten quotation marks or extra arguments
-    //  That being said, I don't think that's a really important thing to prioritize in this tech challenge
-    //  because you can do an essentially arbitrary amount of finessing on string processing to get perfect behavior
-    //  and "doesn't do anything wrong, but could have more intuitive error messaging on weirder edge cases"
-    //  feels like a fine cutoff for the scope of this challenge
-    switch (command) {
-        case "add": {
-            // add "$title" "$artist" splits out into ["add ", "$title", " ", "$artist",""]
-            const args = answer.split("\"");
-            add(args[1], args[3]);
-            break;
-        }
-        case "play": {
-            // play "$title" splits out into ["play ", "$title",""]
-            const args = answer.split("\"");
-            play(args[1]);
-            break;
-        }
-        case "show": { // show all; show unplayed; show all by "$artist"; show unplayed by "$artist"
-            const commandAndArgs = answer.split(" ");
-            const whatToShow = commandAndArgs[1];
-
-            let artistFilter;
-            if (commandAndArgs[2] && commandAndArgs[2] === "by") {
-                // show X by "$artist" splits out into ["show X by ", "$artist", ""]
+const main = () => {
+    console.log("Welcome to your music collection! \n");
+    rl.setPrompt("> ");
+    rl.prompt();
+    rl.on("line", answer => {
+        // first word of user input is a command
+        const command = answer.split(" ")[0]; 
+        // Note: in general we are not handling weird inputs optimally. We aren't crashing the app and aren't
+        //  allowing data to be written to the library in a problematic way, but to make this code production-ready
+        //  we'd want to think about more intelligent parsing of something like forgotten quotation marks or extra arguments
+        //  That being said, I don't think that's a really important thing to prioritize in this tech challenge
+        //  because you can do an essentially arbitrary amount of finessing on string processing to get perfect behavior
+        //  and "doesn't do anything wrong, but could have more intuitive error messaging on weirder edge cases"
+        //  feels like a fine cutoff for the scope of this challenge
+        switch (command) {
+            case "add": {
+                // add "$title" "$artist" splits out into ["add ", "$title", " ", "$artist",""]
                 const args = answer.split("\"");
-                artistFilter = args[1];
+                add(args[1], args[3]);
+                break;
             }
-            show(whatToShow, artistFilter)
-            break;
+            case "play": {
+                // play "$title" splits out into ["play ", "$title",""]
+                const args = answer.split("\"");
+                play(args[1]);
+                break;
+            }
+            case "show": { // show all; show unplayed; show all by "$artist"; show unplayed by "$artist"
+                const commandAndArgs = answer.split(" ");
+                const whatToShow = commandAndArgs[1];
+
+                let artistFilter;
+                if (commandAndArgs[2] && commandAndArgs[2] === "by") {
+                    // show X by "$artist" splits out into ["show X by ", "$artist", ""]
+                    const args = answer.split("\"");
+                    artistFilter = args[1];
+                }
+                show(whatToShow, artistFilter)
+                break;
+            }
+            case "quit": {
+                quit();
+                break;
+            }
+            default: {
+                console.log("I didn't recognize that input.");
+                rl.prompt();
+            }
         }
-        case "quit": {
-            console.log("Bye!");
-            rl.close();
-            break;
-        }
-        default: {
-            console.log("I didn't recognize that input.");
-            rl.prompt();
-        }
-    }
-});
+    });
+}
 
 const add = (title, artist) => {
     if (title && artist) {
-        library.push({
-            title: title, 
-            artist: artist, 
-            hasBeenPlayed: false});
-        console.log(`Added "${title}" by ${artist}`)
+        if (isTitleInLibrary(title)) {
+            console.log(`Cannot add to library - album called "${title}" already exists`);
+        } else {
+            library.push({
+                title: title, 
+                artist: artist, 
+                hasBeenPlayed: false});
+            console.log(`Added "${title}" by ${artist}`)
+        }
     } else {
         console.log("Invalid input - required format is 'add \"$title\" \"$artist\"");
     }
@@ -99,7 +104,7 @@ const add = (title, artist) => {
 
 const play = (title) => {
     if (title) {
-        if (verifyTitleInLibrary(title)) {
+        if (isTitleInLibrary(title)) {
             console.log(`You're listening to "${title}"`);
             markAsPlayed(title);
         } else {
@@ -119,18 +124,18 @@ const show = (whatToShow, artistFilter) => {
     else if (!(whatToShow === "all" || whatToShow === "unplayed")) {
         console.log(invalidFormatResponse);
     } else {
-        let songsToShow;
+        let albumsToShow;
         switch (whatToShow) {
             case "all":
-                songsToShow = getFilteredLibrary(false, artistFilter);
-                songsToShow.forEach(song => {
-                    console.log(`"${song.title}" by ${song.artist} (${song.hasBeenPlayed ? "played" : "unplayed"})`);
+                albumsToShow = getFilteredLibrary(false, artistFilter);
+                albumsToShow.forEach(album => {
+                    console.log(`"${album.title}" by ${album.artist} (${album.hasBeenPlayed ? "played" : "unplayed"})`);
                 })
                 break;
             case "unplayed":
-                songsToShow = getFilteredLibrary(true, artistFilter);
-                songsToShow.forEach(song => {
-                    console.log(`"${song.title}" by ${song.artist}`);
+                albumsToShow = getFilteredLibrary(true, artistFilter);
+                albumsToShow.forEach(album => {
+                    console.log(`"${album.title}" by ${album.artist}`);
                 })
                 break;
             default:
@@ -140,4 +145,21 @@ const show = (whatToShow, artistFilter) => {
     rl.prompt();
 }
 
+const quit = () => {
+    library.length = 0;   // This gets cleared out on its own if we're rerunning the app in CLI, but not when testing
+    console.log("Bye!");
+    rl.close();
+}
+
+main();
+
 //#endregion
+
+module.exports = {
+    main,
+    add,
+    play,
+    show,
+    quit,
+    library
+}
