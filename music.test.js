@@ -130,3 +130,13 @@ describe("Make sure Show works", () => {
             });
     })
 });
+
+// NOTE: there's something significant missing here, which is tests handling inputs and verifying 
+//  that we're doing error handling correctly. I don't like leaving this missing, but it seems like 
+//  the established way to handle the interaction between jest and stdin is the use of the npm package 
+//  `mock-stdin`. I spent about an hour trying to get it working, but could not get it set up properly 
+//  (the mock stdin was initializing but I couldn't get it to send anything)
+//  Documentation on the package is pretty sparse, and if I were working on this in a real job context
+//  I'd be at the point where I'd turn to a coworker to talk through my approach since I think either
+//  this is much harder than I'd expect for a tech challenge or else I'm missing something important in
+//  my assessment of the issue.
