@@ -8,6 +8,7 @@ afterEach(() => {
     // NOTE: there's an error, "Jest did not exit one second after the test run has completed."
     //      which happens only if I run more than one test. investigate more once tests are written
     music.quit();
+    jest.clearAllMocks();
 });
 
 const logSpy = jest.spyOn(global.console, "log");
@@ -77,5 +78,55 @@ describe("Make sure Play works", () => {
 });
 
 describe("Make sure Show works", () => {
+    const albumList = [{title: "First Album", artist: "Artist"},
+                       {title: "Second Album", artist: "Artist"},
+                       {title: "Joe's Album", artist: "Joe's Band"}];
+    beforeEach(() => {
+        albumList.forEach(album => music.add(album.title, album.artist));
+        return albumList;
+    })
+    test("show all albums", () => {
+        music.show("all");
+        albumList.forEach(album => {
+            expect(logSpy).toHaveBeenCalledWith(`"${album.title}" by ${album.artist} (unplayed)`);
+        });
+    });
+    test("show albums filtered by artist", () => {
+        const artistFilter = "Artist";
+        music.show("all", artistFilter);
 
+        albumList.filter(album => album.artist === artistFilter).forEach(album => {
+            expect(logSpy).toHaveBeenCalledWith(`"${album.title}" by ${album.artist} (unplayed)`);
+        });
+        albumList.filter(album => album.artist !== artistFilter).forEach(album => {
+            expect(logSpy).not.toHaveBeenCalledWith(`"${album.title}" by ${album.artist} (unplayed)`);
+        });
+    });
+    test("show albums filtered by unplayed", () => {
+        const playedAlbum = "First Album";
+        music.play(playedAlbum);
+        music.show("unplayed");
+
+        music.library.filter(album => album.hasBeenPlayed === false).forEach(album => {
+            expect(logSpy).toHaveBeenCalledWith(`"${album.title}" by ${album.artist}`);
+        });
+        music.library.filter(album => album.hasBeenPlayed === true).forEach(album => {
+            expect(logSpy).not.toHaveBeenCalledWith(`"${album.title}" by ${album.artist}`);
+        });
+    });
+    test("show albums filtered by artist and unplayed", () => {
+        const playedAlbum = {title: "This Has Been Played", artist: "Joe's Band"};
+        music.add(playedAlbum.title, playedAlbum.artist);
+        music.play(playedAlbum);
+        music.show("unplayed", playedAlbum.artist);
+
+        music.library.filter(album => album.hasBeenPlayed === false && album.artist === playedAlbum.artist)
+            .forEach(album => {
+                expect(logSpy).toHaveBeenCalledWith(`"${album.title}" by ${album.artist}`);
+            });
+        music.library.filter(album => (album.hasBeenPlayed === true || album.artist !== playedAlbum.artist))
+            .forEach(album => {
+                expect(logSpy).not.toHaveBeenCalledWith(`"${album.title}" by ${album.artist}`);
+            });
+    })
 });
