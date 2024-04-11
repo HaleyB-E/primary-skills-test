@@ -1,0 +1,23 @@
+{
+  "name": "primary-skills-test",
+  "version": "1.0.0",
+  "description": "music library for Primary skills test",
+  "main": "music",
+  "dependencies": {
+    "jest": "^29.7.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HaleyB-E/primary-skills-test.git"
+  },
+  "author": "Haley Brandt-Erichsen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HaleyB-E/primary-skills-test/issues"
+  },
+  "homepage": "https://github.com/HaleyB-E/primary-skills-test#instructions"
+}
